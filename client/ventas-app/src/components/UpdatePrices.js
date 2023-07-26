@@ -1,35 +1,49 @@
-// components/UpdatePrices.js
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const UpdatePrices = () => {
+  const navigate = useNavigate();
   const [type, setType] = useState('');
   const [provider, setProvider] = useState('');
   const [isNational, setIsNational] = useState(false);
+  const [percentage, setPercentage] = useState('');
+  const [error, setError] = useState('');
 
-  const handleUpdatePrices = () => {
-    // Aquí puedes llamar a la API para actualizar los precios con los criterios seleccionados (type, provider, isNational).
-    // Puedes utilizar la función fetch() para hacer la petición POST a la API.
-    // Recuerda que debes implementar la lógica en el servidor para realizar las actualizaciones en la base de datos.
-    // Por ejemplo:
-    fetch('/api/update-prices', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ type, provider, isNational }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        console.log(data); // Aquí puedes manejar la respuesta de la API, por ejemplo, mostrar un mensaje de éxito o error.
-      })
-      .catch((error) => {
-        console.error('Error updating prices:', error);
+  const handleUpdatePrices = async () => {
+    if (!type && !provider) {
+      setError('Debes especificar al menos uno de los filtros (Tipo, Proveedor o Nacional)');
+      return;
+    }
+
+    if (percentage === '' || parseFloat(percentage) === 0) {
+      setError('El porcentaje de actualización no puede ser 0');
+      return;
+    }
+
+    try {
+      const apiUrl = process.env.REACT_APP_API_BASE_URL;
+      const response = await fetch(`${apiUrl}/products/update_price`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ type, provider, isNational, percentage }),
       });
+
+      if (!response.ok) {
+        throw new Error('Error al actualizar los precios');
+      }
+
+      navigate('/lista-productos');
+    } catch (error) {
+      setError('Error al actualizar los precios');
+    }
   };
 
   return (
-    <div className="container mt-4">
-      <h3>Actualizar Precios</h3>
+    <div>
+      <h2>Actualizar Precios</h2>
+      {error && <p>{error}</p>}
       <form>
         <div className="mb-3">
           <label htmlFor="type" className="form-label">
@@ -55,7 +69,7 @@ const UpdatePrices = () => {
             onChange={(e) => setProvider(e.target.value)}
           />
         </div>
-        <div className="mb-3 form-check">
+        {/* <div className="mb-3 form-check">
           <input
             type="checkbox"
             className="form-check-input"
@@ -64,8 +78,20 @@ const UpdatePrices = () => {
             onChange={(e) => setIsNational(e.target.checked)}
           />
           <label className="form-check-label" htmlFor="isNational">
-            ¿Es Nacional?
+            Nacional
           </label>
+        </div> */}
+        <div className="mb-3">
+          <label htmlFor="percentage" className="form-label">
+            Porcentaje de Actualización:
+          </label>
+          <input
+            type="text"
+            className="form-control"
+            id="percentage"
+            value={percentage}
+            onChange={(e) => setPercentage(e.target.value)}
+          />
         </div>
         <button type="button" className="btn btn-primary" onClick={handleUpdatePrices}>
           Actualizar Precios

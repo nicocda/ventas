@@ -59,6 +59,7 @@ router.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
       SELECT products.id, products.description, products.code, products.type, products.price, products.provider, products.is_national, products.available, MAX(price_history.modification_date) AS last_modified_date
       FROM products
       LEFT JOIN price_history ON products.id = price_history.product_id
+      where products.available = 1
       GROUP BY products.id, products.description, products.code, products.type, products.price, products.provider, products.is_national, products.available
     `;
         const [productsResult] = yield db_1.default.execute(query);
@@ -93,6 +94,28 @@ router.put('/update_price', (req, res) => __awaiter(void 0, void 0, void 0, func
     catch (error) {
         console.error('Error updating price:', error);
         res.status(500).json({ message: 'Server error' });
+    }
+}));
+// Ruta para cambiar el estado del producto por su ID (DELETE)
+router.delete('/:id', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const productId = req.params.id;
+    try {
+        // Buscar el producto por su ID
+        const productQuery = 'SELECT * FROM products WHERE id = ?';
+        // Ejecutar la consulta y obtener el resultado
+        const [result] = yield db_1.default.execute(productQuery, [productId]);
+        // Verificar si la propiedad 'affectedRows' existe en el resultado
+        if ('affectedRows' in result) {
+            return res.status(404).json({ message: 'Producto no encontrado' });
+        }
+        // Cambiar el estado del producto a "no disponible" (available = false)
+        const updateProductQuery = 'UPDATE products SET available = ? WHERE id = ?';
+        yield db_1.default.query(updateProductQuery, [false, productId]);
+        res.json({ message: 'Estado del producto cambiado correctamente' });
+    }
+    catch (error) {
+        console.error('Error cambiando el estado del producto:', error);
+        res.status(500).json({ message: 'Error cambiando el estado del producto' });
     }
 }));
 exports.default = router;

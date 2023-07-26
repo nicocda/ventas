@@ -12,16 +12,15 @@ export async function updatePrice(criteria: PriceUpdateCriteria): Promise<number
   const { type, provider, isNational, percentage } = criteria;
   let condition = '';
 
-  if (type) condition += ` AND type = '${type}'`;
-  if (provider) condition += ` AND provider = '${provider}'`;
-  if (isNational !== undefined) condition += ` AND is_national = ${isNational ? 1 : 0}`;
+  if (type) condition += ` AND type like '${type}'`;
+  if (provider) condition += ` AND provider like '${provider}'`;
 
-  if (!type && !provider && isNational === undefined) {
+  if (!type && !provider) {
     throw new Error('You must specify at least one criteria to update the price.');
   }
 
   const query = `UPDATE products SET price = price + (price * ? / 100) WHERE 1=1 ${condition}`;
-  
+  console.log(query + percentage)
   // Ejecutar la consulta y obtener el resultado
   const [result] = await pool.execute(query, [percentage]);
 

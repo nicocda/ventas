@@ -1,71 +1,97 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTimes, faBarcode  } from '@fortawesome/free-solid-svg-icons';
+import ProductCard from './ProductCard';
+import BarcodeScanner from './BarcodeScanner'; // Importamos el componente BarcodeScanner
 
-class ProductList extends Component {
-  state = {
-    products: [],
-    loading: true,
-    error: null,
-  };
 
-  async componentDidMount() {
-    this.fetchProducts();
-  }
+const ProductList = () => {
+  const apiUrl = process.env.REACT_APP_API_BASE_URL;
+  const [products, setProducts] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredProducts, setFilteredProducts] = useState([]);
 
-  fetchProducts = async () => {
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
     try {
-      const apiUrl = process.env.REACT_APP_API_BASE_URL;
       const response = await fetch(`${apiUrl}/products`);
       if (!response.ok) {
-        throw new Error('Error al obtener los productos');
+        throw new Error('Error fetching products');
       }
       const data = await response.json();
-      this.setState({ products: data, loading: false, error: null });
+      setProducts(data);
     } catch (error) {
-      this.setState({ error: 'Error al obtener los productos', loading: false });
+      console.error(error);
     }
   };
 
-  handleRefresh = () => {
-    this.setState({ loading: true, error: null });
-    this.fetchProducts();
+  useEffect(() => {
+    const filtered = products.filter(
+      (product) =>
+        product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.provider.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredProducts(filtered);
+  }, [searchTerm, products]);
+
+  const handleClearSearch = () => {
+    setSearchTerm('');
   };
 
-  render() {
-    const { products, loading, error } = this.state;
+  const handleBarcodeScan = (barcode) => {
+    setSearchTerm(barcode); // Seteamos el término de búsqueda con el código de barras escaneado
+  };
+  const [showScanner, setShowScanner] = useState(false);
 
-    if (loading) {
-      return <div>Cargando...</div>;
-    }
+  const handleScan = (barcode) => {
+    setSearchTerm(barcode);
+    setShowScanner(false);
+  };
+  return (
+    <div>
+      <h2>Lista de Productos</h2>
+<div className="input-group mb-3">
+        <input
+          type="text"
+          className="form-control"
+          placeholder="Buscar por descripción, código, tipo o proveedor"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        {searchTerm && (
+          <button className="btn btn-outline-secondary" onClick={handleClearSearch}>
+            <FontAwesomeIcon icon={faTimes} />
+          </button>
+        )}
+         {/* <button
+        className="btn btn-outline-primary"
+        onClick={() => setShowScanner(!showScanner)}
+      >
+        <FontAwesomeIcon icon={faBarcode} />
+      </button> */}
 
-    if (error) {
-      return (
-        <div>
-          {error}
-          <br />
-          <button onClick={this.handleRefresh}>Refrescar lista</button>
-        </div>
-      );
-    }
 
-    return (
-      <div>
-        <h2>Listado de Productos</h2>
-        <button type="button" onClick={this.handleRefresh}>Refrescar lista</button>
+      </div>
+      {/* {showScanner && <BarcodeScanner onScan={handleScan} />} */}
+      {filteredProducts.length > 0 ? (
         <ul>
-          {products.map((product) => (
+          {filteredProducts.map((product) => (
             <li key={product.id}>
-              <strong>Descripción:</strong> {product.description} <br />
-              <strong>Código:</strong> {product.code} <br />
-              <strong>Tipo:</strong> {product.type} <br />
-              <strong>Proveedor:</strong> {product.provider} <br />
-              <strong>Precio:</strong> {product.price} <br />
-              <strong>Nacional:</strong> {product.isNational ? 'Sí' : 'No'}
+            <ProductCard product={product} onDelete={fetchProducts}/>
+              <hr />
             </li>
           ))}
         </ul>
-      </div>
-    );
-  }
-}
+      ) : (
+        <p>No se encontraron productos.</p>
+      )}
+    </div>
+  );
+};
 
 export default ProductList;
