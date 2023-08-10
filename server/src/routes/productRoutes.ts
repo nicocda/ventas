@@ -84,15 +84,42 @@ router.get('/', async (req, res) => {
 // Ruta para actualizar el precio de un producto
 router.put('/update_price', async (req: Request, res: Response) => {
   try {
-    const { type, provider, isNational, percentage } = req.body;
-
-    const criteria = { type, provider, isNational, percentage };
+    const { type, provider, code, percentage } = req.body;
+    const criteria = { type, provider, code, percentage };
 
     const updatedRows = await updatePrice(criteria);
     res.json({ message: `${updatedRows} product(s) updated successfully.` });
   } catch (error) {
     console.error('Error updating price:', error);
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.get('/:id', async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const query = 'SELECT * FROM products WHERE id = ?';
+    
+    const [productsResult] = await pool.execute(query,[productId]);
+    const product = productsResult as any;
+// console.log(product);
+//     // Modificar el formato si es necesario
+//     const formattedProducts = {
+//       id: product.id,
+//       description: product.description,
+//       code: product.code,
+//       type: product.type,
+//       price: parseFloat(product.price).toFixed(2), // Formatear a dos decimales
+//       provider: product.provider,
+//       is_national: product.is_national === 1,
+//       available: product.available === 1,
+//       last_modified_date: product.last_modified_date,
+//     };
+
+    res.json(product[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error al obtener el producto' });
   }
 });
 
@@ -126,6 +153,36 @@ router.delete('/:id', async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Error cambiando el estado del producto' });
   }
 });
+
+router.get('/providers', async (req, res) => {
+  try {
+  
+    const query = "SELECT DISTINCT provider FROM products WHERE available = 1 and provider is not null and provider <> '' order by provider";
+    const [result] = await pool.execute(query);
+    const providers = result as any[];
+
+    res.json(providers.map(pr => pr.provider));
+  } catch (error) {
+    console.error('Error al obtener los proveedores de productos:', error);
+    res.status(500).json({ error: 'Ocurrió un error al obtener los proveedores de productos' });
+  }
+});
+
+
+router.get('/types', async (req, res) => {
+  try {
+  
+    const query = "SELECT DISTINCT type FROM products WHERE available = 1 and type is not null and type <> '' order by type";
+    const [result] = await pool.execute(query);
+    const types = result as any[];
+
+    res.json(types.map(t => t.type));
+  } catch (error) {
+    console.error('Error al obtener los tipos de productos:', error);
+    res.status(500).json({ error: 'Ocurrió un error al obtener los tipos de productos' });
+  }
+});
+
 
 
 export default router;

@@ -86,14 +86,40 @@ router.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 // Ruta para actualizar el precio de un producto
 router.put('/update_price', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { type, provider, isNational, percentage } = req.body;
-        const criteria = { type, provider, isNational, percentage };
+        const { type, provider, code, percentage } = req.body;
+        const criteria = { type, provider, code, percentage };
         const updatedRows = yield (0, priceUpdater_1.updatePrice)(criteria);
         res.json({ message: `${updatedRows} product(s) updated successfully.` });
     }
     catch (error) {
         console.error('Error updating price:', error);
         res.status(500).json({ message: 'Server error' });
+    }
+}));
+router.get('/:id', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const productId = req.params.id;
+        const query = 'SELECT * FROM products WHERE id = ?';
+        const [productsResult] = yield db_1.default.execute(query, [productId]);
+        const product = productsResult;
+        // console.log(product);
+        //     // Modificar el formato si es necesario
+        //     const formattedProducts = {
+        //       id: product.id,
+        //       description: product.description,
+        //       code: product.code,
+        //       type: product.type,
+        //       price: parseFloat(product.price).toFixed(2), // Formatear a dos decimales
+        //       provider: product.provider,
+        //       is_national: product.is_national === 1,
+        //       available: product.available === 1,
+        //       last_modified_date: product.last_modified_date,
+        //     };
+        res.json(product[0]);
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al obtener el producto' });
     }
 }));
 // Ruta para cambiar el estado del producto por su ID (DELETE)
@@ -116,6 +142,30 @@ router.delete('/:id', (req, res) => __awaiter(void 0, void 0, void 0, function* 
     catch (error) {
         console.error('Error cambiando el estado del producto:', error);
         res.status(500).json({ message: 'Error cambiando el estado del producto' });
+    }
+}));
+router.get('/providers', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const query = "SELECT DISTINCT provider FROM products WHERE available = 1 and provider is not null and provider <> '' order by provider";
+        const [result] = yield db_1.default.execute(query);
+        const providers = result;
+        res.json(providers.map(pr => pr.provider));
+    }
+    catch (error) {
+        console.error('Error al obtener los proveedores de productos:', error);
+        res.status(500).json({ error: 'Ocurrió un error al obtener los proveedores de productos' });
+    }
+}));
+router.get('/types', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const query = "SELECT DISTINCT type FROM products WHERE available = 1 and type is not null and type <> '' order by type";
+        const [result] = yield db_1.default.execute(query);
+        const types = result;
+        res.json(types.map(t => t.type));
+    }
+    catch (error) {
+        console.error('Error al obtener los tipos de productos:', error);
+        res.status(500).json({ error: 'Ocurrió un error al obtener los tipos de productos' });
     }
 }));
 exports.default = router;
