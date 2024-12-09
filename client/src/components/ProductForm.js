@@ -8,7 +8,7 @@ const ProductForm = ({ productId }) => {
   const [price, setPrice] = useState('');
   const [isNational, setIsNational] = useState(false);
   const [error, setError] = useState('');
-  const [productData, setProductData] = useState({});
+  // const [productData, setProductData] = useState({});
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -20,7 +20,7 @@ const ProductForm = ({ productId }) => {
             throw new Error('Error al obtener los datos del producto');
           }
           const product = await response.json();
-          setProductData(product);
+          // setProductData(product);
           setDescription(product.description);
           setCode(product.code);
           setType(product.type);

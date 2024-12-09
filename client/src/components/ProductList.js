@@ -15,8 +15,14 @@ const ProductList = () => {
   }, []);
 
   const fetchProducts = async () => {
+    // setProducts([
+    //   { code: "P001", description: "Camisa", type: "Ropa", provider: "Proveedor A", price: 29.99 },
+    //   { code: "P002", description: "Pantalón", type: "Ropa", provider: "Proveedor B", price: 49.99 },
+    //   { code: "P003", description: "Zapatos", type: "Calzado", provider: "Proveedor C", price: 79.99 },
+    // ]);
     try {
       const response = await fetch(`${apiUrl}/products`);
+
       if (!response.ok) {
         throw new Error('Error fetching products');
       }
@@ -42,10 +48,57 @@ const ProductList = () => {
     setSearchTerm('');
   };
 
+  const exportToCSV = () => {
+    // Encabezados en español
+    const headers = ["Código", "Descripción", "Tipo", "Proveedor", "Precio"];
+    // Filas con los datos de los productos
+    const rows = products.map((product) => [
+      product.code,
+      product.description,
+      product.type,
+      product.provider,
+      product.price,
+    ]);
+
+    // Combinar encabezados y filas con punto y coma
+    const csvContent =
+      [headers, ...rows]
+        .map((row) => row.map((item) => `"${item}"`).join(";")) // Separar por punto y coma
+        .join("\n");
+
+    // Crear archivo Blob con BOM para evitar problemas de acentos
+    const BOM = "\uFEFF"; // Marca de orden de bytes
+    const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    // Crear enlace de descarga y activarlo
+    const link = document.createElement("a");
+    link.href = url;
+
+    const today = new Date();
+    const day = String(today.getDate()).padStart(2, "0"); // Asegurar 2 dígitos
+    const month = String(today.getMonth() + 1).padStart(2, "0"); // Meses van de 0 a 11
+    const year = today.getFullYear();
+    const formattedDate = `${day}-${month}-${year}`; // Formato dd-MM-yyyy
+
+    const fileName = `Productos_${formattedDate}.csv`;
+
+    link.setAttribute("download", fileName);
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
  
   return (
     <div>
-      <h2>Lista de Productos</h2>
+      <button
+        className="btn btn-success rounded-pill d-flex align-items-center gap-2 float-end"
+        onClick={exportToCSV}
+        >
+        Exportar Productos
+      </button>
+        <h2>Lista de Productos</h2>
 <div className="input-group mb-3">
         <input
           type="text"
